@@ -285,6 +285,7 @@ dependencies = [
  "oauth2",
  "reqwest",
  "serde",
+ "serde_json",
  "tokio",
  "url",
 ]

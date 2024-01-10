@@ -21,7 +21,7 @@ const TOKEN_URL: &str = "https://api.fitbit.com/oauth2/token";
 #[derive(Debug, Deserialize)]
 struct Params {
     code: String,
-    state: String,
+    // state: String,
 }
 
 #[derive(Clone)]
@@ -57,10 +57,27 @@ async fn main() -> Result<()> {
 
     let client = BasicClient::new(client_id, Some(client_secret), auth_url, Some(token_url));
 
+    let scopes = vec![
+        // "activity",
+        // "cardio_fitness",
+        // "electrocardiogram",
+        "heartrate",
+        // "location",
+        // "nutrition",
+        // "oxygen_saturation",
+        // "profile",
+        // "respiratory_rate",
+        // "settings",
+        // "sleep",
+        // "social",
+        // "temperature",
+        // "weight",
+    ];
+
     // Generate and open the authorization URL
-    let (authorize_url, csrf_state) = client
+    let (authorize_url, _csrf_state) = client
         .authorize_url(CsrfToken::new_random)
-        .add_scope(Scope::new("heartrate".to_string()))
+        .add_scopes(scopes.into_iter().map(|s| Scope::new(s.to_string())))
         .url();
 
     println!(
@@ -83,9 +100,8 @@ async fn main() -> Result<()> {
 
     let access_token = token.access_token().secret();
 
-    let data = fetch_heartbeat_data(access_token).await?;
-
-    println!("data: {}", data);
+    let data: serde_json::Value = serde_json::from_str(&fetch_heartbeat_data(access_token).await?)?;
+    println!("{}", serde_json::to_string_pretty(&data)?);
     Ok(())
 }
 
@@ -95,7 +111,7 @@ async fn fetch_heartbeat_data(access_token: &str) -> Result<String> {
     let auth_header_value = format!("Bearer {}", access_token);
 
     let response = client
-        .get("https://api.fitbit.com/1/user/-/activities/heart/date/today/1d.json")
+        .get("https://api.fitbit.com/1/user/-/activities/heart/date/today/1d/1min.json")
         .header(reqwest::header::AUTHORIZATION, auth_header_value)
         .send()
         .await?;
