@@ -2,6 +2,8 @@ use anyhow::{Context, Result};
 use axum::extract::{Query, State};
 use axum::routing::get;
 use axum::Router;
+use clap::Parser;
+use log::info;
 use oauth2::basic::BasicClient;
 use oauth2::reqwest::async_http_client;
 use oauth2::{
@@ -11,11 +13,18 @@ use serde::Deserialize;
 use tokio::net::TcpListener;
 use tokio::sync::mpsc::{channel, Sender};
 
-// Fitbit OAuth 2.0 credentials
-const CLIENT_ID: &str = "23RMML";
-const CLIENT_SECRET: &str = "919c54d7f064b7756f00a4b8a26981d0";
-const AUTH_URL: &str = "https://www.fitbit.com/oauth2/authorize";
-const TOKEN_URL: &str = "https://api.fitbit.com/oauth2/token";
+#[derive(Parser, Debug, Clone)]
+#[clap(author, version, about, long_about = None)]
+struct Args {
+    #[clap(long, env)]
+    client_id: String,
+    #[clap(long, env)]
+    client_secret: String,
+    #[clap(long, env, default_value = "https://www.fitbit.com/oauth2/authorize")]
+    auth_url: String,
+    #[clap(long, env, default_value = "https://api.fitbit.com/oauth2/token")]
+    token_url: String,
+}
 
 // Oauth2 callback query params
 #[derive(Debug, Deserialize)]
@@ -35,6 +44,8 @@ async fn callback(State(state): State<AppState>, Query(params): Query<Params>) -
 
 #[tokio::main]
 async fn main() -> Result<()> {
+    simple_logger::init_with_level(log::Level::Info)?;
+    let args = Args::parse();
     let (sender, mut receiver) = channel::<String>(1);
 
     // run axum in the background listening for callback requests
@@ -45,17 +56,16 @@ async fn main() -> Result<()> {
 
         let bind = format!("0.0.0.0:{}", 8080);
         let listener = TcpListener::bind(&bind).await.unwrap();
-        println!("listening on {}", &bind);
+        info!("listening on {}", &bind);
         axum::serve(listener, app).await.unwrap();
     });
 
-    // Construct Fitbit OAuth2 client
-    let client_id = ClientId::new(CLIENT_ID.to_string());
-    let client_secret = ClientSecret::new(CLIENT_SECRET.to_string());
-    let auth_url = AuthUrl::new(AUTH_URL.to_string())?;
-    let token_url = TokenUrl::new(TOKEN_URL.to_string())?;
-
-    let client = BasicClient::new(client_id, Some(client_secret), auth_url, Some(token_url));
+    let client = BasicClient::new(
+        ClientId::new(args.client_id),
+        Some(ClientSecret::new(args.client_secret)),
+        AuthUrl::new(args.auth_url)?,
+        Some(TokenUrl::new(args.token_url)?),
+    );
 
     let scopes = vec![
         // "activity",
@@ -80,7 +90,7 @@ async fn main() -> Result<()> {
         .add_scopes(scopes.into_iter().map(|s| Scope::new(s.to_string())))
         .url();
 
-    println!(
+    info!(
         "Open this URL in your browser to authorize the application: {}",
         authorize_url
     );
@@ -101,7 +111,7 @@ async fn main() -> Result<()> {
     let access_token = token.access_token().secret();
 
     let data: serde_json::Value = serde_json::from_str(&fetch_heartbeat_data(access_token).await?)?;
-    println!("{}", serde_json::to_string_pretty(&data)?);
+    info!("{}", serde_json::to_string_pretty(&data)?);
     Ok(())
 }
 
