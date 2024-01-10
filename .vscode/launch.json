@@ -7,11 +7,15 @@
     {
       "type": "lldb",
       "request": "launch",
-      "name": "Debug executable 'fitbit-rs-gpt'",
+      "name": "Debug executable 'fitbit-rs-example'",
       "cargo": {
-        "args": ["build", "--bin=fitbit-rs-gpt", "--package=fitbit-rs-gpt"],
+        "args": [
+          "build",
+          "--bin=fitbit-rs-example",
+          "--package=fitbit-rs-example"
+        ],
         "filter": {
-          "name": "fitbit-rs-gpt",
+          "name": "fitbit-rs-example",
           "kind": "bin"
         }
       },
@@ -21,16 +25,16 @@
     {
       "type": "lldb",
       "request": "launch",
-      "name": "Debug unit tests in executable 'fitbit-rs-gpt'",
+      "name": "Debug unit tests in executable 'fitbit-rs-example'",
       "cargo": {
         "args": [
           "test",
           "--no-run",
-          "--bin=fitbit-rs-gpt",
-          "--package=fitbit-rs-gpt"
+          "--bin=fitbit-rs-example",
+          "--package=fitbit-rs-example"
         ],
         "filter": {
-          "name": "fitbit-rs-gpt",
+          "name": "fitbit-rs-example",
           "kind": "bin"
         }
       },
