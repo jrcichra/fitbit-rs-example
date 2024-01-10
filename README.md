@@ -1,4 +1,4 @@
-# fitbit-rs
+# fitbit-rs-example
 
 Example oauth2 program talking to the fitbit api
 
