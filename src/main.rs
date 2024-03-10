@@ -63,43 +63,43 @@ async fn main() -> Result<()> {
         access_token = token_storage.access_token;
     }
 
-    // run axum in the background listening for callback requests
-    tokio::spawn(async move {
-        let app = Router::new()
-            .route("/callback", get(callback))
-            .with_state(AppState(sender));
-
-        let bind = format!("0.0.0.0:{}", 8080);
-        let listener = TcpListener::bind(&bind).await.unwrap();
-        info!("listening on {}", &bind);
-        axum::serve(listener, app).await.unwrap();
-    });
-
-    let client = BasicClient::new(
-        ClientId::new(args.client_id),
-        Some(ClientSecret::new(args.client_secret)),
-        AuthUrl::new(args.auth_url)?,
-        Some(TokenUrl::new(args.token_url)?),
-    );
-
-    let scopes = vec![
-        // "activity",
-        // "cardio_fitness",
-        // "electrocardiogram",
-        "heartrate",
-        // "location",
-        // "nutrition",
-        // "oxygen_saturation",
-        // "profile",
-        // "respiratory_rate",
-        // "settings",
-        // "sleep",
-        // "social",
-        // "temperature",
-        // "weight",
-    ];
-
     if access_token.is_empty() {
+        // run axum in the background listening for callback requests
+        tokio::spawn(async move {
+            let app = Router::new()
+                .route("/callback", get(callback))
+                .with_state(AppState(sender));
+
+            let bind = format!("0.0.0.0:{}", 8080);
+            let listener = TcpListener::bind(&bind).await.unwrap();
+            info!("listening on {}", &bind);
+            axum::serve(listener, app).await.unwrap();
+        });
+
+        let client = BasicClient::new(
+            ClientId::new(args.client_id),
+            Some(ClientSecret::new(args.client_secret)),
+            AuthUrl::new(args.auth_url)?,
+            Some(TokenUrl::new(args.token_url)?),
+        );
+
+        let scopes = vec![
+            // "activity",
+            // "cardio_fitness",
+            // "electrocardiogram",
+            "heartrate",
+            // "location",
+            // "nutrition",
+            // "oxygen_saturation",
+            // "profile",
+            // "respiratory_rate",
+            // "settings",
+            // "sleep",
+            // "social",
+            // "temperature",
+            // "weight",
+        ];
+
         // Generate and open the authorization URL
         let (authorize_url, _csrf_state) = client
             .authorize_url(CsrfToken::new_random)
