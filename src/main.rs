@@ -25,6 +25,8 @@ struct Args {
     auth_url: String,
     #[clap(long, env, default_value = "https://api.fitbit.com/oauth2/token")]
     token_url: String,
+    #[clap(long, env, default_value = "today")]
+    date: String,
 }
 
 #[derive(Debug, Deserialize, Serialize)]
@@ -134,18 +136,21 @@ async fn main() -> Result<()> {
     }
 
     let data: serde_json::Value =
-        serde_json::from_str(&fetch_heartbeat_data(&access_token).await?)?;
+        serde_json::from_str(&fetch_heartbeat_data(&access_token, &args.date).await?)?;
     info!("{}", serde_json::to_string_pretty(&data)?);
     Ok(())
 }
 
-async fn fetch_heartbeat_data(access_token: &str) -> Result<String> {
+async fn fetch_heartbeat_data(access_token: &str, date: &str) -> Result<String> {
     let client = reqwest::Client::new();
 
     let auth_header_value = format!("Bearer {}", access_token);
 
     let response = client
-        .get("https://api.fitbit.com/1/user/-/activities/heart/date/today/1d/1min.json")
+        .get(format!(
+            "https://api.fitbit.com/1/user/-/activities/heart/date/{}/1d/1min.json",
+            date
+        ))
         .header(reqwest::header::AUTHORIZATION, auth_header_value)
         .send()
         .await?;
